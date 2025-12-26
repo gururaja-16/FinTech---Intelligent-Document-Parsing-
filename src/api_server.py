@@ -8,15 +8,20 @@ from ocr_pipeline import OCRPipeline
 app = Flask(__name__)
 CORS(app)  # Enable CORS for React frontend
 
+# Get the absolute path to the project root
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "legal_ner")
+
 # Initialize OCR Pipeline
 ocr_pipeline = OCRPipeline()
 
 # Load trained NER model
 try:
-    nlp = spacy.load("models/legal_ner")
+    nlp = spacy.load(MODEL_PATH)
     print("✅ NER Model loaded successfully")
-except:
-    print("⚠️ NER Model not found. Please train the model first.")
+except Exception as e:
+    print(f"⚠️ NER Model not found at {MODEL_PATH}")
+    print(f"Error: {e}")
     nlp = None
 
 # Create upload directory
