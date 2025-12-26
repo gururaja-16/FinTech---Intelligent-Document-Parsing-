@@ -49,18 +49,21 @@ def process_document():
     entity_types = len([k for k, v in entities.items() if v])
 
     return jsonify(
-        {
-            "success": True,
-            "filename": filename,
-            "entities": entities,
-            "quality_score": processed["quality_score"],
-            "validation_report": processed["validation_report"],
-            "summary": {
-                "total_entities": total_entities,
-                "entity_types": entity_types,
-            },
-        }
-    )
+    {
+        "success": True,
+        "filename": filename,
+        "entities": entities,
+        "quality_score": processed["quality_score"],
+        "validation_report": processed["validation_report"],
+        "text": text,  # ← ADD THIS LINE
+        "text_length": len(text),  # ← ADD THIS LINE
+        "summary": {
+            "total_entities": total_entities,
+            "entity_types": entity_types,
+        },
+    }
+)
+
 
 def extract_text_from_pdf(file_storage):
     """Read text from uploaded PDF using PyMuPDF."""
