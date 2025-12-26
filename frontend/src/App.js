@@ -1,200 +1,141 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import './App.css';
+import React, { useState } from "react";
+import "./App.css";
 
 function App() {
   const [file, setFile] = useState(null);
-  const [text, setText] = useState('');
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState(null);
-  const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('upload');
+  const [error, setError] = useState("");
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-    setError(null);
-  };
+  const handleFileUpload = async (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
 
-  const handleTextChange = (e) => {
-    setText(e.target.value);
-    setError(null);
-  };
-
-  const handleFileUpload = async () => {
-    if (!file) {
-      setError('Please select a file first');
-      return;
-    }
-
+    setFile(selectedFile);
     setLoading(true);
-    setError(null);
-    setResults(null);
+    setError("");
+    setData(null);
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", selectedFile);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/process-document', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const response = await fetch("http://127.0.0.1:8000/api/process", {
+        method: "POST",
+        body: formData,
       });
-      setResults(response.data);
+
+      const result = await response.json();
+
+      if (result.success) {
+        setData(result);
+      } else {
+        setError(result.error || "Processing failed");
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to process document');
+      setError("Server error: " + err.message);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleTextAnalysis = async () => {
-    if (!text.trim()) {
-      setError('Please enter some text first');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setResults(null);
-
-    try {
-      const response = await axios.post('http://localhost:5000/api/analyze-text', { text });
-      setResults(response.data);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to analyze text');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getEntityColor = (label) => {
-    const colors = {
-      PARTY: '#3b82f6',
-      DATE: '#10b981',
-      AMOUNT: '#f59e0b',
-      JURISDICTION: '#8b5cf6',
-    };
-    return colors[label] || '#6b7280';
   };
 
   return (
     <div className="App">
-      <div className="container">
-        <header className="header">
-          <h1>FinTech Document Parser</h1>
-          <p>Extract structured data from financial and legal documents using AI</p>
-        </header>
+      <header className="App-header">
+        <h1>🚀 LexScan-Auto - Week 3 Demo</h1>
+        <p>
+          Rule-Based Layer & Precision | ISO 8601 Dates | Amount Parsing |
+          Quality Scoring
+        </p>
+      </header>
 
-        <div className="tabs">
-          <button
-            className={`tab ${activeTab === 'upload' ? 'active' : ''}`}
-            onClick={() => setActiveTab('upload')}
-          >
-            Upload Document
-          </button>
-          <button
-            className={`tab ${activeTab === 'text' ? 'active' : ''}`}
-            onClick={() => setActiveTab('text')}
-          >
-            Analyze Text
-          </button>
+      <div className="upload-section">
+        <input
+          type="file"
+          accept=".pdf,.jpg,.png"
+          onChange={handleFileUpload}
+          disabled={loading}
+        />
+        {loading && <p>⏳ Processing with Week 3 Pipeline...</p>}
+        {file && <p>📄 Selected: {file.name}</p>}
+      </div>
+
+      {error && (
+        <div
+          className="error"
+          style={{ color: "red", padding: "20px", background: "#f8d7da" }}
+        >
+          ❌ {error}
         </div>
+      )}
 
-        <div className="input-section">
-          {activeTab === 'upload' ? (
-            <div className="upload-area">
-              <input
-                type="file"
-                onChange={handleFileChange}
-                accept=".pdf,.txt"
-                id="file-input"
-                className="file-input"
-              />
-              <label htmlFor="file-input" className="file-label">
-                <div className="upload-icon">+</div>
-                <div>{file ? file.name : 'Choose a PDF or TXT file'}</div>
-              </label>
-              <button
-                onClick={handleFileUpload}
-                disabled={loading || !file}
-                className="btn btn-primary"
-              >
-                {loading ? 'Processing...' : 'Process Document'}
-              </button>
-            </div>
-          ) : (
-            <div className="text-area">
-              <textarea
-                value={text}
-                onChange={handleTextChange}
-                placeholder="Paste your contract or financial document text here..."
-                rows="10"
-                className="text-input"
-              />
-              <button
-                onClick={handleTextAnalysis}
-                disabled={loading || !text.trim()}
-                className="btn btn-primary"
-              >
-                {loading ? 'Analyzing...' : 'Analyze Text'}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {error && (
-          <div className="error-message">
-            Error: {error}
-          </div>
-        )}
-
-        {results && (
-          <div className="results-section">
-            <h2>Extraction Results</h2>
-            
-            <div className="summary-cards">
-              <div className="summary-card">
-                <div className="summary-number">{results.summary.total_entities}</div>
-                <div className="summary-label">Total Entities Found</div>
-              </div>
-              <div className="summary-card">
-                <div className="summary-number">{results.summary.entity_types}</div>
-                <div className="summary-label">Entity Types</div>
-              </div>
+      <div className="results">
+        {data && data.success && (
+          <div>
+            {/* ⭐ WEEK 3: Quality Score Badge */}
+            <div className="quality-badge">
+              ⭐ Quality Score:{" "}
+              {data.quality_score ? data.quality_score.toFixed(2) : "N/A"}/1.0
             </div>
 
-            {Object.keys(results.entities).length > 0 ? (
-              <div className="entities-grid">
-                {Object.entries(results.entities).map(([label, entities]) => (
-                  <div key={label} className="entity-category">
-                    <h3 style={{ color: getEntityColor(label) }}>
-                      {label}
-                      <span className="entity-count">{entities.length}</span>
-                    </h3>
-                    <div className="entity-list">
-                      {entities.map((entity, idx) => (
-                        <div
-                          key={idx}
-                          className="entity-item"
-                          style={{ borderLeftColor: getEntityColor(label) }}
-                        >
-                          {entity.text}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+            {/* ⚠️ WEEK 3: Warnings List */}
+            {data.warnings && data.warnings.length > 0 && (
+              <div className="warnings">
+                <h3>⚠️ Validation Warnings ({data.warnings.length})</h3>
+                {data.warnings.map((warning, i) => (
+                  <p key={i}>• {warning}</p>
                 ))}
-              </div>
-            ) : (
-              <div className="no-entities">
-                No entities found in the document.
               </div>
             )}
 
-            {results.text && (
-              <div className="extracted-text">
-                <h3>Extracted Text</h3>
-                <pre>{results.text}</pre>
+            {/* 📊 WEEK 3: Enhanced Entities Display */}
+            <h2>📊 Extracted Entities ({data.summary?.total_entities || 0})</h2>
+
+            {Object.entries(data.entities || {}).map(([label, items]) =>
+              items && items.length > 0 ? (
+                <div key={label} className="entity-group">
+                  <h3>
+                    {label} ({items.length})
+                  </h3>
+                  {items.map((entity, i) => (
+                    <div key={i} className="entity-card">
+                      {entity.original ? (
+                        <>
+                          <strong>{entity.original}</strong>
+                          {entity.standardized && (
+                            <div>
+                              <small>
+                                📅 ISO: <code>{entity.standardized}</code>
+                              </small>
+                            </div>
+                          )}
+                          {entity.value !== undefined && (
+                            <div>
+                              <small>
+                                💰 Value:{" "}
+                                <code>${entity.value?.toLocaleString()}</code>{" "}
+                                {entity.currency}
+                              </small>
+                            </div>
+                          )}
+                        </>
+                      ) : entity.text ? (
+                        <strong>{entity.text}</strong>
+                      ) : (
+                        <strong>{JSON.stringify(entity)}</strong>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : null
+            )}
+
+            {/* 📈 WEEK 3 Summary */}
+            {data.summary && (
+              <div className="summary">
+                <h3>📈 Processing Summary</h3>
+                <p>Total Entities: {data.summary.total_entities}</p>
+                <p>Quality: {data.summary.quality}</p>
               </div>
             )}
           </div>
