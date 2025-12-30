@@ -7,6 +7,7 @@ import fitz  # PyMuPDF
 sys.path.insert(0, os.path.dirname(__file__))
 
 from ner_post_processor import NERPostProcessor
+from text_cleaner import normalize_text
 
 app = Flask(__name__)
 CORS(app)
@@ -35,6 +36,9 @@ def process_document():
 
     # 1) extract text from PDF (simple but works for your demo)
     text = extract_text_from_pdf(upload)
+
+    # 1.5) clean the extracted text for OCR errors
+    text = normalize_text(text)
 
     # 2) build a SIMPLE demo entity dict from that text
     #    (replace this later with your real NER model)

@@ -95,3 +95,69 @@ class TestNERPostProcessor(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+    
+    
+import pytest
+from text_cleaner import normalize_text
+
+@pytest.mark.parametrize("input_text,expected", [
+    ("Th1s is a t3st", "This is a test"),
+    ("exam ple", "Example"),
+    ("rnarket", "Market"),
+    ("@hello#world$", "hello world"),
+    ("tEsT", "tEsT"),
+    ("exampl", "Example"),
+    ("café résumé", "cafe resume"),
+    ("This\nis\na\ntest", "This is a test"),
+    ("O123", "0123"),
+])
+def test_normalize_text(input_text, expected):
+    assert normalize_text(input_text) == expected
+
+
+class TestAdvancedEdgeCases(unittest.TestCase):
+    def test_effective_date_ocr_confusion(self):
+        result = normalize_text("Effect1ve Date: 0l/02/2024")
+        self.assertEqual(result, "Effective Date: 01/02/2024")
+    
+    def test_party_name_with_symbols(self):
+        result = normalize_text("@Acme#Corp$ Pvt. Ltd.")
+        self.assertEqual(result, "Acme Corp Pvt Ltd")
+    
+    def test_jurisdiction_diacritics(self):
+        result = normalize_text("Jurisdiction: São Paulo, Brazil")
+        self.assertEqual(result, "Jurisdiction: Sao Paulo, Brazil")
+    
+    def test_effective_date_line_breaks(self):
+        result = normalize_text("Effective\nDate:\nFebruary 3, 2024")
+        self.assertEqual(result, "Effective Date: February 3, 2024")
+    
+    def test_party_name_split(self):
+        result = normalize_text("Ac me Corporation")
+        self.assertEqual(result, "Acme Corporation")
+    
+    def test_noise_only(self):
+        result = normalize_text("@@@###$$$")
+        self.assertEqual(result, "")
+    
+    def test_amount_ocr_confusion(self):
+        result = normalize_text("Total Value: USD 10O,OOO")
+        self.assertEqual(result, "Total Value: USD 100,000")
+    
+    def test_date_logic_validation_invalid(self):
+        valid, msg = ValidationRules.validate_date_logic("01/01/2024", "12/31/2023")
+        self.assertFalse(valid)
+        self.assertIn("precedes", msg)
+    
+    def test_currency_indian_grouping(self):
+        result = ValidationRules.standardize_amount("INR 1,00,000.00")
+        self.assertEqual(result['value'], 100000.0)
+        self.assertEqual(result['currency'], 'INR')
+    
+    def test_mixed_date_formats(self):
+        from date_standardizer import DateStandardizer
+        date1 = DateStandardizer.to_iso8601("03/02/2024")
+        date2 = DateStandardizer.to_iso8601("March 5, 2024")
+        self.assertEqual(date1, "2024-02-03")
+        self.assertEqual(date2, "2024-03-05")
+
