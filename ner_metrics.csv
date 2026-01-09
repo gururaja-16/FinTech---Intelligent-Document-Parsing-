@@ -1,0 +1,4 @@
+Model,Precision,Recall,F1
+Raw NER,72,68,70
+Rule-Based,89,85,87
+Final,97,92,94

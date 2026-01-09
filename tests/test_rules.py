@@ -2,6 +2,13 @@ import unittest
 import sys
 sys.path.insert(0, '../src')
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+from dateutil import parser
+
+
 from validation_rules import ValidationRules
 from date_standardizer import DateStandardizer
 from ner_post_processor import NERPostProcessor
